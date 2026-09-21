@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Para ti">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Para Kamila</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#000000;
+  --fg:#FFFFFF;
+  --dim:rgba(255,255,255,.42);
+  --faint:rgba(255,255,255,.14);
+  --ok:#6FBF7F;
+  --key:rgba(255,255,255,.13);
+  --key-press:rgba(255,255,255,.30);
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --ios:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  box-sizing:border-box;
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--sans); -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body.locked{overflow:hidden}
+img{max-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:1px solid rgba(255,255,255,.7);outline-offset:3px}
+
+/* ---------------- CANDADO ---------------- */
+#lock{
+  position:fixed; inset:0; z-index:100; background:var(--bg);
+  display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+  padding-top:calc(env(safe-area-inset-top,0px) + 8vh);
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 4vh);
+  font-family:var(--ios);
+  transition:opacity .7s ease, transform .7s ease;
+}
+#lock.opening{opacity:0; transform:scale(1.06); pointer-events:none}
+#lock.gone{display:none}
+.lock-head{text-align:center;padding:0 24px}
+.lock-title{margin:0;font-size:17px;font-weight:400;line-height:1.45;letter-spacing:-.01em;max-width:20rem}
+.lock-note{margin:6px 0 0;font-size:13px;color:var(--dim)}
+.lock-note.pulse{animation:notePulse 2.2s ease-in-out infinite;color:#fff}
+@keyframes notePulse{0%,100%{opacity:.4}50%{opacity:1}}
+#lock.solved{cursor:pointer}
+#lock.solved .keypad{visibility:hidden}
+.lock-bottom{display:flex;flex-direction:column;align-items:center;gap:clamp(12px,2.6vh,24px)}
+.install-link{font-family:var(--ios);font-size:14px;color:rgba(255,255,255,.72);padding:6px 12px}
+.install-link[hidden]{display:none}
+.share-ic{width:1.15em;height:1.15em;vertical-align:-.22em;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.dots{display:flex;gap:22px;justify-content:center;margin-top:26px}
+.dots.shake{animation:shake .45s ease}
+.dot{
+  width:13px;height:13px;border-radius:50%;border:1px solid rgba(255,255,255,.85);
+  transition:background-color .18s ease, border-color .18s ease;
+}
+.dot.filled{background:var(--fg)}
+.dot.ok{background:var(--ok);border-color:var(--ok)}
+.dot.bad{animation:blink .5s ease 2}
+@keyframes blink{0%,100%{background:#fff;border-color:#fff}50%{background:transparent;border-color:rgba(255,255,255,.4)}}
+@keyframes shake{
+  10%,90%{transform:translateX(-4px)} 20%,80%{transform:translateX(7px)}
+  30%,50%,70%{transform:translateX(-10px)} 40%,60%{transform:translateX(10px)}
+}
+.keypad{
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:clamp(14px,4.5vw,26px); width:min(300px,78vw); justify-items:center;
+}
+.key{
+  width:clamp(64px,21vw,78px); aspect-ratio:1; border-radius:50%; background:var(--key);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; line-height:1;
+  transition:background-color .12s ease, transform .12s ease; -webkit-tap-highlight-color:transparent;
+}
+.key:active{background:var(--key-press); transform:scale(.96)}
+.key .num{font-size:clamp(27px,8vw,33px); font-weight:400; letter-spacing:.01em}
+.key .abc{font-size:10px; letter-spacing:.14em; color:rgba(255,255,255,.82)}
+.key .abc.empty{visibility:hidden}
+.key.plain{background:none}
+.key.plain:active{background:rgba(255,255,255,.08)}
+.key.plain .num{font-size:clamp(22px,6.5vw,26px)}
+.hint-pulse{animation:pulseKey 1.8s ease-in-out infinite}
+@keyframes pulseKey{0%,100%{background:rgba(255,255,255,.06)}50%{background:rgba(255,255,255,.22)}}
+
+#sheet,#installSheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:120; background:#0a0a0a;
+  border-top:1px solid var(--faint); border-radius:20px 20px 0 0;
+  padding:14px 24px calc(env(safe-area-inset-bottom,0px) + 28px);
+  transform:translateY(102%); transition:transform .42s cubic-bezier(.3,.8,.3,1);
+  max-height:82vh; overflow-y:auto;
+}
+#sheet.open,#installSheet.open{transform:translateY(0)}
+#scrim{position:fixed;inset:0;z-index:110;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .4s ease}
+#scrim.open{opacity:1;pointer-events:auto}
+.grabber{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.28);margin:0 auto 20px}
+.sheet-title{font-size:13px;color:var(--dim);margin:0 0 18px;font-weight:400}
+.hint{display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(255,255,255,.08)}
+.hint:first-of-type{border-top:0}
+.hint .n{font-family:var(--ios);font-size:12px;color:var(--dim);padding-top:3px;min-width:18px}
+.hint p{margin:0;font-size:15px;line-height:1.5;font-weight:300;flex:1}
+.hint .kanji{
+  padding-left:14px; align-self:center; line-height:1;
+  font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",var(--serif);
+  font-size:26px; color:rgba(255,255,255,.6);
+}
+.hint.locked p{color:rgba(255,255,255,.35)}
+.reveal-wrap{margin-top:22px;text-align:center;min-height:20px}
+#revealBtn{font-size:14px;color:var(--dim);text-decoration:underline;text-underline-offset:4px}
+#sheetClose,#installClose{display:block;margin:26px auto 0;font-size:15px}
+
+/* ---------------- MÚSICA ---------------- */
+#soundBtn{
+  position:fixed; z-index:90; right:16px; top:calc(env(safe-area-inset-top,0px) + 14px);
+  width:38px; height:38px; border-radius:50%;
+  background:rgba(255,255,255,.08); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .8s ease;
+}
+#soundBtn[hidden]{display:none}
+#soundBtn.show{opacity:1}
+#soundBtn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#soundBtn .off{display:none}
+#soundBtn.muted .on{display:none}
+#soundBtn.muted .off{display:inline}
+
+/* ---------------- INICIO ---------------- */
+#intro{min-height:100svh;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;position:relative;overflow:hidden}
+#intro .intro-bg{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:58% 38%;
+  opacity:0; transform:scale(1.08); pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 45%, #000 40%, transparent 100%);
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 45%, #000 40%, transparent 100%);
+  transition:opacity 2.2s ease, transform 2.6s cubic-bezier(.2,.7,.3,1);
+}
+#intro.in .intro-bg{opacity:.38; transform:none}
+#intro h1{position:relative; z-index:1}
+#intro h1{
+  font-family:var(--sans); font-weight:400; font-size:clamp(46px,15vw,104px);
+  line-height:1; letter-spacing:-.04em; margin:0;
+  opacity:0; transform:translateY(14px);
+  transition:opacity 1.4s ease, transform 1.4s cubic-bezier(.2,.7,.3,1);
+}
+#intro.in h1{opacity:1;transform:none}
+
+/* ---------------- 50 RAZONES ---------------- */
+#reasons{position:relative; padding:14vh 0 22vh; overflow-x:clip}
+.sec-head{padding:0 24px;margin:0 0 12vh;position:relative;z-index:2;text-align:center}
+.sec-head h2{font-weight:400;font-size:clamp(30px,9vw,60px);line-height:1.02;letter-spacing:-.035em;margin:0}
+.sec-head h2 em{font-family:var(--serif);font-style:italic;letter-spacing:-.005em}
+.reason-list{list-style:none;margin:0;padding:0;position:relative;z-index:2}
+.reason{
+  display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;
+  padding:0 24px; margin-bottom:9vh;
+  opacity:0; transform:translateY(22px);
+  transition:opacity .9s ease, transform .9s cubic-bezier(.2,.7,.3,1);
+}
+.reason.in{opacity:1;transform:none}
+.reason .idx{font-family:var(--ios);font-size:11px;color:rgba(255,255,255,.35)}
+.reasons-end{
+  font-family:var(--serif); font-style:italic; font-weight:400;
+  font-size:clamp(32px,10vw,58px); line-height:1.08; letter-spacing:-.01em;
+  margin:14vh auto 0; position:relative; z-index:2; max-width:12ch;
+}
+.reason .txt{font-size:clamp(20px,5.6vw,30px);line-height:1.22;letter-spacing:-.02em;font-weight:300;margin:0;max-width:20ch}
+
+.floaters{position:absolute;inset:0;pointer-events:none;z-index:1}
+.floaters.front{z-index:3}
+.ph{position:absolute;will-change:transform}
+.ph img{
+  display:block; width:100%; height:auto; border-radius:2px;
+  pointer-events:none; -webkit-user-drag:none; user-select:none;
+}
+.floaters:not(.front) .ph img{filter:brightness(.6)}
+.ph.nudge img{animation:nudge 1.1s ease-in-out 2}
+@keyframes nudge{0%,100%{transform:none}20%{transform:translate(-7px,-3px) rotate(-3deg)}45%{transform:translate(6px,2px) rotate(2.5deg)}70%{transform:translate(-3px,0) rotate(-1deg)}}
+.ph .cap{font-family:var(--ios);font-size:9px;color:rgba(255,255,255,.35);margin-top:6px;display:block}
+.floaters.front .ph{
+  pointer-events:auto; touch-action:none; cursor:grab;
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+}
+.floaters.front .ph img{transition:box-shadow .25s ease}
+.floaters.front .ph.dragging{cursor:grabbing}
+.floaters.front .ph.dragging img{box-shadow:0 22px 48px rgba(0,0,0,.85)}
+
+/* ---------------- GALERÍA ---------------- */
+#gallery{padding:16vh 0 18vh;position:relative;z-index:4;background:var(--bg)}
+.gal-head{padding:0 24px;margin-bottom:6vh;text-align:center}
+.gal-head h2{font-weight:400;font-size:clamp(26px,7.5vw,48px);letter-spacing:-.035em;margin:0}
+.gal{overflow:hidden;width:100%;position:relative;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none}
+.gal:active{cursor:grabbing}
+.gal-track.jump .slide{transition:none !important}
+.gal-track{display:flex;gap:14px;align-items:center;will-change:transform}
+.slide{
+  flex:0 0 auto; width:62vw; max-width:420px;
+  transition:opacity .7s ease, transform .7s cubic-bezier(.3,.8,.3,1);
+  opacity:.28; transform:scale(.88);
+}
+.slide.active{opacity:1;transform:scale(1)}
+.slide .frame{width:100%;aspect-ratio:4/5;overflow:hidden;background:#0d0d0d;border-radius:2px}
+.slide .frame img{display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
+.slide .cap{
+  font-size:12px;font-weight:300;color:var(--dim);margin-top:12px;display:block;min-height:1.2em;
+  opacity:0;transition:opacity .6s ease;
+}
+.slide.active .cap{opacity:1}
+
+/* ---------------- CARTA ---------------- */
+#envelope{
+  min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:0 24px;position:relative;z-index:4;background:var(--bg);
+}
+#openLetter{
+  font-family:var(--serif); font-style:italic; font-size:clamp(30px,9vw,54px);
+  letter-spacing:-.01em; padding:18px 30px; animation:breathe 3.2s ease-in-out infinite;
+}
+@keyframes breathe{0%,100%{opacity:.35;letter-spacing:-.01em}50%{opacity:1;letter-spacing:.02em}}
+#envelope .hint-txt{margin-top:22px;font-size:12px;color:rgba(255,255,255,.3);font-weight:300}
+.env-cover{display:flex;flex-direction:column;align-items:center;transition:opacity .6s ease}
+.env-cover.out{opacity:0}
+.env-cover[hidden]{display:none}
+.letter{
+  width:100%;max-width:30rem;text-align:left;padding:10vh 0;
+  opacity:0;transform:translateY(16px);
+  transition:opacity 1.3s ease, transform 1.3s cubic-bezier(.2,.7,.3,1);
+}
+.letter[hidden]{display:none}
+.letter.in{opacity:1;transform:none}
+.letter .to{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(30px,8.5vw,46px);letter-spacing:-.01em;margin:0 0 24px}
+.letter p{font-size:clamp(15.5px,4.2vw,18px);line-height:1.62;font-weight:300;margin:0 0 1em;color:rgba(255,255,255,.88)}
+.letter .sign{margin:30px 0 0;font-family:var(--serif);font-style:italic;font-size:clamp(24px,6.5vw,32px);color:#fff}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  .reason,.letter,#intro h1{opacity:1;transform:none}
+}
+</style>
+</head>
+<body class="locked">
+
+<div id="lock">
+  <div class="lock-head">
+    <p class="lock-title">Cuatro números. Los cuatro son nuestros.</p>
+    <p class="lock-note">Ingresa el código</p>
+    <div class="dots" id="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+  </div>
+  <div class="lock-bottom">
+  <div class="keypad" id="keypad">
+    <button class="key" data-d="1"><span class="num">1</span><span class="abc empty">.</span></button>
+    <button class="key" data-d="2"><span class="num">2</span><span class="abc">ABC</span></button>
+    <button class="key" data-d="3"><span class="num">3</span><span class="abc">DEF</span></button>
+    <button class="key" data-d="4"><span class="num">4</span><span class="abc">GHI</span></button>
+    <button class="key" data-d="5"><span class="num">5</span><span class="abc">JKL</span></button>
+    <button class="key" data-d="6"><span class="num">6</span><span class="abc">MNO</span></button>
+    <button class="key" data-d="7"><span class="num">7</span><span class="abc">PQRS</span></button>
+    <button class="key" data-d="8"><span class="num">8</span><span class="abc">TUV</span></button>
+    <button class="key" data-d="9"><span class="num">9</span><span class="abc">WXYZ</span></button>
+    <button class="key" id="hintKey" aria-label="Ver pistas"><span class="num">?</span><span class="abc empty">.</span></button>
+    <button class="key" data-d="0"><span class="num">0</span><span class="abc empty">.</span></button>
+    <button class="key plain" id="delKey" aria-label="Borrar"><span class="num">⌫</span><span class="abc empty">.</span></button>
+  </div>
+  <button class="install-link" id="installLink" hidden>Guardar como app</button>
+  </div>
+</div>
+
+<audio id="music" preload="auto" playsinline></audio>
+<button id="soundBtn" aria-label="Silenciar música" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/>
+    <g class="on"><path d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path d="M18 6.8a7.5 7.5 0 0 1 0 10.4"/></g>
+    <g class="off"><path d="M16 9.5l5 5M21 9.5l-5 5"/></g>
+  </svg>
+</button>
+<div id="scrim"></div>
+<div id="sheet" role="dialog" aria-label="Pistas">
+  <div class="grabber"></div>
+  <p class="sheet-title">Una pista por número, en orden. Si te trabas, el símbolo de cada pista también esconde su número: piensa en nuestro viaje soñado.</p>
+  <div id="hintList"></div>
+  <div class="reveal-wrap"><button id="revealBtn" hidden>Ya, dime el código</button></div>
+  <button id="sheetClose">Cerrar</button>
+</div>
+<div id="installSheet" role="dialog" aria-label="Guardar como app">
+  <div class="grabber"></div>
+  <p class="sheet-title">Para tenerla en tu pantalla de inicio y abrirla como una app:</p>
+  <div id="installSteps">
+    <div class="hint"><span class="n">1</span><p>Ábrela en Safari. Si la abriste desde WhatsApp o Instagram, toca el menú y elige “Abrir en Safari”.</p></div>
+    <div class="hint"><span class="n">2</span><p>Toca el botón Compartir <svg class="share-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M7 11H5v10h14V11h-2"/></svg>. Si no lo ves abajo, toca primero ··· y luego Compartir.</p></div>
+    <div class="hint"><span class="n">3</span><p>Elige “Agregar a inicio”. Si aparece “Abrir como app web”, déjalo activado, y toca Agregar.</p></div>
+    <div class="hint"><span class="n">4</span><p>Ábrela desde el ícono. Puedes salir y volver cuando quieras mientras descubres el código.</p></div>
+  </div>
+  <button id="installClose">Entendido</button>
+</div>
+
+<section id="intro"><img class="intro-bg" src="fotos/portada.jpg" alt="" aria-hidden="true"><h1>Kamila &lt;3</h1></section>
+
+<section id="reasons">
+  <div class="floaters" id="floatBack"></div>
+  <div class="sec-head"><h2>50 razones <em>por las que te amo</em></h2></div>
+  <ul class="reason-list" id="reasonList"></ul>
+  <p class="reason reasons-end">Por todo eso, te amo.</p>
+  <div class="floaters front" id="floatFront"></div>
+</section>
+
+<section id="gallery">
+  <div class="gal-head"><h2>Nuestra galería</h2></div>
+  <div class="gal" id="gal"><div class="gal-track" id="galTrack"></div></div>
+</section>
+
+<section id="envelope">
+  <div class="env-cover" id="envCover">
+    <button id="openLetter">Ábrela</button>
+    <p class="hint-txt">Te escribí algo</p>
+  </div>
+  <article class="letter" id="letter" hidden>
+    <p class="to">Hola, Kamila.</p>
+    <p>Quizá no te esperabas esto, pero lo hice con mucho cariño y con mucho amor. En este pequeño espacio, lo que quiero decirte es que te amo. Te amé, te amo ahora y te amaré para siempre.</p>
+    <p>Todo esto es una representación de lo que siento por ti. Quizá tú y yo no creamos en esto del 21 de septiembre ni en las flores amarillas, pero quería demostrarte de alguna u otra forma que realmente eres la mujer de mi vida.</p>
+    <p>Hemos pasado por tantas cosas. Nos hemos conocido desde lo más básico hasta lo más profundo, y te quiero a ti. Solo te quiero a ti.</p>
+    <p>No voy a olvidar las veces que nos metíamos debajo de las sábanas y pensábamos que estábamos juntos. Ni las veces que peleábamos y después estábamos bien. Ni todas las veces que nos decíamos que solo éramos amigos, pero al final todo se convirtió en esto.</p>
+    <p>Desde el primer momento en que te vi supe que eras para mí, y que quería estar a tu lado siempre.</p>
+    <p>Estoy muy orgulloso de ti, de lo que eres, de lo que has llegado a ser y de lo que vas a ser. Y voy a estar mucho más orgulloso si me eliges a mí como el hombre que acompañe tu recorrido en la vida.</p>
+    <p>Te amo mucho, Kamila. Y espero que tú y yo seamos muy grandes: grandes para nuestra familia, grandes para nuestros hijos y grandes para nosotros mismos.</p>
+    <p>Te amo.</p>
+    <p class="sign">Luis</p>
+  </article>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================== CONFIGURACIÓN ===================== */
+  const CODE = "3294";          // 3 de junio · 29 de octubre · 4 días seguidos
+  const REVEAL_AFTER = 3;       // intentos fallidos (con todas las pistas ya visibles) antes de ofrecer la respuesta
+
+  // Pistas: la primera se ve desde el inicio; las demás aparecen solas a la hora indicada (hora de su celular).
+  const DIA_PISTAS = [2026, 9, 21];   // año, mes, día
+  const HINTS = [
+    { text: "Todo empezó con un mensaje. ¿Qué día de junio fue?", kanji: "三", hora: null },
+    { text: "El día que por fin nos vimos en persona tiene dos cifras. Esta es la primera.", kanji: "二", hora: 16 },
+    { text: "Y esta es la segunda. Te ayudo: fue la víspera de nuestra cita de Halloween.", kanji: "九", hora: 18 },
+    { text: "¿Cuántos días seguidos salimos después de eso? En Japón este número trae mala suerte. A nosotros nos trajo todo.", kanji: "四", hora: 20 }
+  ];
+
+  const COLLAGE = [{"src": "fotos/collage-01.jpg", "w": 1000, "h": 667, "front": true, "width": 52, "left": 3, "top": 5.0, "rot": 2}, {"src": "fotos/collage-02.jpg", "w": 1000, "h": 750, "front": false, "width": 42, "left": 50, "top": 9.2, "rot": -3}, {"src": "fotos/galeria-01.jpg", "w": 943, "h": 1200, "front": false, "width": 48, "left": 9, "top": 13.4, "rot": 2.5}, {"src": "fotos/collage-03.jpg", "w": 562, "h": 1000, "front": false, "width": 38, "left": 58, "top": 17.6, "rot": -2}, {"src": "fotos/collage-04.jpg", "w": 750, "h": 1000, "front": true, "width": 56, "left": 7, "top": 21.8, "rot": 3}, {"src": "fotos/collage-05.jpg", "w": 902, "h": 1000, "front": false, "width": 44, "left": 49, "top": 26.0, "rot": -2.5}, {"src": "fotos/galeria-02.jpg", "w": 900, "h": 1200, "front": false, "width": 50, "left": 5, "top": 30.1, "rot": 1.5}, {"src": "fotos/collage-06.jpg", "w": 750, "h": 1000, "front": false, "width": 40, "left": 57, "top": 34.3, "rot": -3.5}, {"src": "fotos/collage-07.jpg", "w": 1000, "h": 750, "front": true, "width": 52, "left": 3, "top": 38.5, "rot": 2}, {"src": "fotos/collage-08.jpg", "w": 1000, "h": 750, "front": false, "width": 42, "left": 52, "top": 42.7, "rot": -1.5}, {"src": "fotos/galeria-03.jpg", "w": 775, "h": 1200, "front": false, "width": 48, "left": 9, "top": 46.9, "rot": 2}, {"src": "fotos/collage-09.jpg", "w": 750, "h": 1000, "front": false, "width": 38, "left": 53, "top": 51.1, "rot": -3}, {"src": "fotos/collage-10.jpg", "w": 750, "h": 1000, "front": true, "width": 56, "left": 7, "top": 55.3, "rot": 2.5}, {"src": "fotos/collage-11.jpg", "w": 562, "h": 1000, "front": false, "width": 44, "left": 51, "top": 59.5, "rot": -2}, {"src": "fotos/galeria-05.jpg", "w": 1200, "h": 966, "front": false, "width": 50, "left": 5, "top": 63.7, "rot": 3}, {"src": "fotos/collage-12.jpg", "w": 1000, "h": 728, "front": false, "width": 40, "left": 52, "top": 67.9, "rot": -2.5}, {"src": "fotos/galeria-04.jpg", "w": 900, "h": 1200, "front": true, "width": 52, "left": 3, "top": 72.0, "rot": 1.5}, {"src": "fotos/collage-14.jpg", "w": 750, "h": 1000, "front": false, "width": 42, "left": 54, "top": 76.2, "rot": -3.5}, {"src": "fotos/collage-13.jpg", "w": 640, "h": 480, "front": true, "width": 48, "left": 9, "top": 80.4, "rot": 2}, {"src": "fotos/galeria-06.jpg", "w": 900, "h": 1200, "front": false, "width": 38, "left": 55, "top": 84.6, "rot": -1.5}, {"src": "fotos/galeria-07.jpg", "w": 1200, "h": 900, "front": false, "width": 56, "left": 7, "top": 88.8, "rot": 2}, {"src": "fotos/galeria-08.jpg", "w": 900, "h": 1200, "front": true, "width": 44, "left": 53, "top": 93.0, "rot": -3}];
+  const GALLERY = [{"src": "fotos/galeria-01.jpg", "cap": "Noviembre 2025", "pos": "50% 50%"}, {"src": "fotos/galeria-02.jpg", "cap": "Noviembre 2025", "pos": "50% 60%"}, {"src": "fotos/galeria-03.jpg", "cap": "Diciembre 2025", "pos": "50% 35%"}, {"src": "fotos/galeria-04.jpg", "cap": "Enero 2026", "pos": "50% 35%"}, {"src": "fotos/galeria-05.jpg", "cap": "Mayo 2026", "pos": "50% 40%"}, {"src": "fotos/galeria-06.jpg", "cap": "Mayo 2026", "pos": "50% 45%"}, {"src": "fotos/galeria-07.jpg", "cap": "Julio 2026", "pos": "55% 50%"}, {"src": "fotos/galeria-08.jpg", "cap": "Agosto 2026", "pos": "50% 40%"}];
+
+  const REASONS = [
+      "Por lo talentosa que eres.",
+      "Por cómo te pones nerviosa cuando algo te sale mal.",
+      "Por la forma en que me miras.",
+      "Por las palmadas que das cuando estás nerviosa o emocionada.",
+      "Por lo terca que eres cuando peleamos, aunque siempre tienes la razón.",
+      "Por cómo te emocionas con las cosas pequeñas.",
+      "Por las veces que me escuchaste sin intentar arreglarlo todo.",
+      "Por defenderme siempre que puedes.",
+      "Por cómo nos miramos y nos reímos cuando nos da vergüenza.",
+      "Por todo lo que me enseñaste sin darte cuenta.",
+      "Por despertarme con tu voz todas las mañanas, que suena como un gatito.",
+      "Por cómo me miras cuando algo te gusta.",
+      "Por todo lo que eres.",
+      "Por lo fuerte que eres.",
+      "Por nuestros silencios cómodos.",
+      "Por cómo caminas a mi lado.",
+      "Por cómo me miras cuando tienes hambre.",
+      "Por la paciencia que me tienes.",
+      "Por tu risa, que es tan hermosa.",
+      "Por todas las veces que nos escapamos.",
+      "Por todo lo que crees en mí.",
+      "Por decirme siempre cuando estoy mal y qué tengo que corregir.",
+      "Por tu forma de pedirme perdón.",
+      "Por la forma en que me amas.",
+      "Por todas las canciones que conocí porque tú me las hiciste escuchar.",
+      "Por tu letra y por tu arte.",
+      "Por cómo me abrazas.",
+      "Por cómo me besas.",
+      "Por todo lo que no dices pero se te nota.",
+      "Por tu manera de estar siempre presente en mi vida.",
+      "Por cómo te ríes de nuestros chistes.",
+      "Por todo lo que te esfuerzas en la vida.",
+      "Por cómo comes cuando algo nos gusta.",
+      "Por todas las veces que nos quedamos hasta tarde tratando de arreglar las cosas.",
+      "Por tu honestidad, aunque duela.",
+      "Por cómo te pones cuando estás cansada.",
+      "Por lo que sueñas y lo que quieres.",
+      "Por tu forma de decir que sí, y también de decir que no.",
+      "Por cómo te veo cuando te miro, y cómo me ves tú a mí.",
+      "Por todas nuestras conversaciones largas, y las del parque hasta tarde.",
+      "Por todas tus formas de cuidarme.",
+      "Por cómo me haces pensar y cómo me haces sentir.",
+      "Por cómo te enojas, y cómo después se te pasa.",
+      "Por tu forma de llenar el silencio.",
+      "Por todo lo que me perdonaste.",
+      "Por todas nuestras maneras de empezar de nuevo.",
+      "Por cómo te concentras en lo que sabes hacer.",
+      "Por lo que eres cuando estás conmigo.",
+      "Por todo lo que vamos a hacer.",
+      "Por ser tú, aunque no creas en estas fechas."
+  ];
+  /* ========================================================= */
+
+  /* ---------- candado ---------- */
+  const lock = document.getElementById('lock');
+  const dotsWrap = document.getElementById('dots');
+  const dots = Array.from(dotsWrap.children);
+  const keypad = document.getElementById('keypad');
+  const hintKey = document.getElementById('hintKey');
+  const delKey = document.getElementById('delKey');
+  const sheet = document.getElementById('sheet');
+  const scrim = document.getElementById('scrim');
+  const revealBtn = document.getElementById('revealBtn');
+  const lockNote = document.querySelector('.lock-note');
+  const installLink = document.getElementById('installLink');
+  const installSheet = document.getElementById('installSheet');
+  // se guarda en el celular: los intentos y si ya lo abrió (así puede salir y volver como en una app)
+  const OPEN_KEY = 'kamila-abierto-' + CODE, FAIL_KEY = 'kamila-intentos-' + CODE;
+  function store(k,v){ try{ localStorage.setItem(k,v); }catch(err){} }
+  function read(k){ try{ return localStorage.getItem(k); }catch(err){ return null; } }
+  let entry = [], fails = parseInt(read(FAIL_KEY) || '0', 10) || 0, busy = false;
+  const hintList = document.getElementById('hintList');
+  const SEEN_KEY = 'kamila-pistas-vistas-' + CODE;
+  let hintsOpen = 0;
+  function horaDate(h){ return new Date(DIA_PISTAS[0], DIA_PISTAS[1]-1, DIA_PISTAS[2], h, 0, 0); }
+  function fmtHora(h){
+    try{ return horaDate(h).toLocaleTimeString('es-PE', {hour:'numeric', minute:'2-digit'}); }
+    catch(err){ return h + ':00'; }
+  }
+  function renderHints(){
+    const now = new Date();
+    let open = 0;
+    hintList.innerHTML = '';
+    HINTS.forEach((h,i)=>{
+      const ok = h.hora == null || now >= horaDate(h.hora);
+      if(ok) open++;
+      const row = document.createElement('div');
+      row.className = 'hint' + (ok ? '' : ' locked');
+      row.innerHTML = '<span class="n">'+(i+1)+'</span><p></p>' + (ok ? '<span class="kanji" lang="ja"></span>' : '');
+      row.querySelector('p').textContent = ok ? h.text : 'Aparece a las ' + fmtHora(h.hora);
+      if(ok) row.querySelector('.kanji').textContent = h.kanji;
+      hintList.appendChild(row);
+    });
+    return open;
+  }
+  function syncHints(){
+    const seen = parseInt(read(SEEN_KEY) || '0', 10) || 0;
+    // el "?" parpadea si hay una pista nueva sin ver, o si ya falló varias veces
+    hintKey.classList.toggle('hint-pulse', hintsOpen > seen || fails >= 2);
+    // "Ya, dime el código" solo aparece cuando ya salieron todas las pistas y aun así no pudo
+    revealBtn.hidden = !(hintsOpen === HINTS.length && fails >= REVEAL_AFTER);
+  }
+  function refreshHints(){ hintsOpen = renderHints(); syncHints(); }
+  refreshHints();
+  setInterval(refreshHints, 30000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshHints(); });
+
+  function paint(){ dots.forEach((d,i)=>{ d.className = 'dot' + (i < entry.length ? ' filled' : ''); }); }
+  function push(d){
+    if(busy || entry.length >= 4) return;
+    entry.push(d); paint();
+    if(entry.length === 4){
+      if(entry.join('') === CODE) startMusic();   // dentro del toque, para que el celular deje sonar la música
+      setTimeout(evaluate, 180);
+    }
+  }
+  function back(){ if(busy) return; entry.pop(); paint(); }
+  function evaluate(){
+    busy = true;
+    if(entry.join('') === CODE){
+      store(OPEN_KEY, '1');
+      dots.forEach(d => d.className = 'dot ok');
+      setTimeout(unlock, 620);
+      return;
+    }
+    fails++; store(FAIL_KEY, String(fails));
+    dots.forEach((d,i)=>{ d.className = 'dot ' + (entry[i] === CODE[i] ? 'ok' : 'filled bad'); });
+    dotsWrap.classList.add('shake');
+    syncHints();
+    setTimeout(()=>{ dotsWrap.classList.remove('shake'); entry = []; paint(); busy = false; }, 1100);
+  }
+  function unlock(){
+    lock.classList.add('opening'); closeSheet();
+    setTimeout(()=>{
+      lock.classList.add('gone');
+      document.body.classList.remove('locked');
+      window.scrollTo(0,0);
+      start();
+    }, 700);
+  }
+  keypad.addEventListener('click', e=>{ const k = e.target.closest('.key'); if(k && k.dataset.d) push(k.dataset.d); });
+  delKey.addEventListener('click', back);
+  let openS = null;
+  function openSheet(s){ openS = s; s.classList.add('open'); scrim.classList.add('open'); }
+  function closeSheet(){ if(openS) openS.classList.remove('open'); scrim.classList.remove('open'); openS = null; }
+  hintKey.addEventListener('click', ()=>{ refreshHints(); store(SEEN_KEY, String(hintsOpen)); syncHints(); openSheet(sheet); });
+  scrim.addEventListener('click', closeSheet);
+  document.getElementById('sheetClose').addEventListener('click', closeSheet);
+  document.getElementById('installClose').addEventListener('click', closeSheet);
+
+  // si ya lo abrió antes, al volver solo toca la pantalla para entrar (y ese toque enciende la música)
+  if(read(OPEN_KEY) === '1'){
+    lock.classList.add('solved');
+    dots.forEach(d => d.className = 'dot ok');
+    lockNote.textContent = 'Toca para entrar';
+    lockNote.classList.add('pulse');
+    lock.addEventListener('click', e=>{
+      if(busy || e.target.closest('#installLink')) return;
+      busy = true; startMusic(); unlock();
+    });
+  }
+
+  // botón "Guardar como app": solo en el celular y solo si todavía no la abrió desde el ícono
+  const isStandalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if(!isStandalone && isTouch){
+    installLink.hidden = false;
+    if(!isIOS){
+      document.getElementById('installSteps').innerHTML =
+        '<div class="hint"><span class="n">1</span><p>Abre el menú del navegador (los tres puntos).</p></div>' +
+        '<div class="hint"><span class="n">2</span><p>Elige “Instalar app” o “Agregar a pantalla principal”.</p></div>' +
+        '<div class="hint"><span class="n">3</span><p>Ábrela desde el ícono. Puedes salir y volver cuando quieras mientras descubres el código.</p></div>';
+    }
+  }
+  installLink.addEventListener('click', e=>{ e.stopPropagation(); openSheet(installSheet); });
+  revealBtn.addEventListener('click', ()=>{ revealBtn.textContent = 'El código es ' + CODE; revealBtn.style.textDecoration = 'none'; });
+  document.addEventListener('keydown', e=>{
+    if(lock.classList.contains('gone') || lock.classList.contains('solved')) return;
+    if(/^[0-9]$/.test(e.key)) push(e.key);
+    if(e.key === 'Backspace') back();
+  });
+
+  /* ---------- música: empieza al abrir el candado ---------- */
+  const TRACKS = [
+    "musica/01-luna.mp3",
+    "musica/02-weird-fishes.mp3",
+    "musica/03-nothings-gonna-hurt-you-baby.mp3"
+  ];
+  const music = document.getElementById('music');
+  const soundBtn = document.getElementById('soundBtn');
+  let musicOk = true, userMuted = false, ti = 0, trackErrs = 0, started = false;
+  music.src = TRACKS[0];
+  function setMutedUI(m){
+    userMuted = m;
+    soundBtn.classList.toggle('muted', m);
+    soundBtn.setAttribute('aria-label', m ? 'Activar música' : 'Silenciar música');
+  }
+  function showBtn(){
+    if(!soundBtn.hidden) return;
+    soundBtn.hidden = false;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>soundBtn.classList.add('show')));
+  }
+  function playSafe(){
+    const p = music.play();
+    if(p && p.catch) p.catch(err=>{
+      // si el celular bloqueó el sonido, el botón aparece apagado para que ella lo active con un toque
+      if(err && err.name === 'NotAllowedError' && musicOk){ setMutedUI(true); showBtn(); }
+    });
+  }
+  // al terminar una canción sigue la siguiente; después de la tercera vuelve a la primera
+  function nextTrack(){ ti = (ti + 1) % TRACKS.length; music.src = TRACKS[ti]; playSafe(); }
+  music.addEventListener('ended', nextTrack);
+  music.addEventListener('error', ()=>{
+    trackErrs++;
+    if(trackErrs >= TRACKS.length){ musicOk = false; soundBtn.hidden = true; return; }   // sin música, no se muestra nada
+    if(started) nextTrack();
+  });
+  music.addEventListener('playing', ()=>{ trackErrs = 0; showBtn(); });   // el botón solo aparece si de verdad suena
+  function startMusic(){
+    if(!musicOk || started) return;
+    started = true;
+    try{ music.volume = 0; }catch(err){}
+    if(music.error) nextTrack(); else playSafe();
+    let v = 0;                                   // subida suave (en iPhone el volumen lo controla el teléfono)
+    const t = setInterval(()=>{ v = Math.min(1, v + .05); try{ music.volume = v; }catch(err){} if(v >= 1) clearInterval(t); }, 120);
+  }
+  soundBtn.addEventListener('click', ()=>{
+    const m = !userMuted;
+    music.muted = m; setMutedUI(m);
+    if(!m && music.paused) playSafe();
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if(!musicOk || soundBtn.hidden) return;
+    if(document.hidden) music.pause();
+    else if(!userMuted) playSafe();
+  });
+
+  /* ---------- 50 razones ---------- */
+  const list = document.getElementById('reasonList');
+  REASONS.forEach((r,i)=>{
+    const li = document.createElement('li');
+    li.className = 'reason';
+    li.innerHTML = '<span class="idx">'+String(i+1).padStart(3,'0')+'</span><p class="txt"></p>';
+    li.querySelector('.txt').textContent = r;
+    list.appendChild(li);
+  });
+  const io = new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {rootMargin:'0px 0px -12% 0px', threshold:.1});
+  document.querySelectorAll('.reason').forEach(el=>io.observe(el));
+
+  /* ---------- fotos del collage ---------- */
+  const reasonsSec = document.getElementById('reasons');
+  const backLayer = document.getElementById('floatBack');
+  const frontLayer = document.getElementById('floatFront');
+  const floaters = COLLAGE.map((p,i)=>{
+    const el = document.createElement('div');
+    el.className = 'ph';
+    el.style.width = p.width + 'vw';
+    el.style.left = p.left + '%';
+    el.style.top = p.top + '%';
+    const img = new Image();
+    img.src = p.src; img.width = p.w; img.height = p.h;
+    img.alt = ''; img.draggable = false; img.decoding = 'async';
+    el.appendChild(img);
+    const cap = document.createElement('span');
+    cap.className = 'cap'; cap.textContent = String(i+1).padStart(3,'0');
+    el.appendChild(cap);
+    (p.front ? frontLayer : backLayer).appendChild(el);
+    return {
+      el, i, front: p.front, rot: p.rot,
+      speed: p.front ? -(0.12 + (i%3)*0.05) : (0.14 + (i%4)*0.04),
+      ox: 0, oy: 0, base: 0, lift: false
+    };
+  });
+
+  function measure(){
+    const secTop = reasonsSec.getBoundingClientRect().top + window.scrollY;
+    floaters.forEach(f=>{ f.base = secTop + f.el.offsetTop + f.el.offsetHeight/2; });
+  }
+  // desplazamiento relativo al centro de la pantalla: 0 cuando la foto está centrada
+  function drift(f){ return (window.scrollY + window.innerHeight/2 - f.base) * f.speed; }
+  function place(f){
+    const y = f.oy + drift(f);
+    f.el.style.transform =
+      'translate3d('+f.ox.toFixed(1)+'px,'+y.toFixed(1)+'px,0) rotate('+f.rot+'deg) scale('+(f.lift?1.06:1)+')';
+  }
+  function placeAll(){ floaters.forEach(place); }
+  let ticking = false;
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(()=>{ placeAll(); ticking = false; });
+  }
+
+  /* arrastrar las fotos que están sobre el texto; quedan donde las sueltas */
+  const SAVE_KEY = 'kamila-fotos-v2';
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}') || {}; }catch(err){ saved = {}; }
+  let zTop = 20;
+  function keepOnScreen(f){
+    const c = f.el.offsetLeft + f.ox + f.el.offsetWidth/2;
+    const min = 24, max = window.innerWidth - 24;
+    if(c < min) f.ox += min - c;
+    if(c > max) f.ox -= c - max;
+  }
+  floaters.filter(f=>f.front).forEach(f=>{
+    const s = saved[f.i];
+    if(s){ f.speed = 0; f.ox = s.x * window.innerWidth; f.oy = s.y * reasonsSec.offsetHeight; }
+    let pid = null, sx = 0, sy = 0, bx = 0, by = 0;
+    f.el.addEventListener('pointerdown', e=>{
+      e.preventDefault();
+      pid = e.pointerId;
+      try{ f.el.setPointerCapture(pid); }catch(err){}
+      if(f.speed !== 0){ f.oy += drift(f); f.speed = 0; }
+      sx = e.clientX; sy = e.clientY; bx = f.ox; by = f.oy;
+      f.lift = true; f.el.classList.add('dragging'); f.el.style.zIndex = ++zTop;
+      place(f);
+    });
+    f.el.addEventListener('pointermove', e=>{
+      if(e.pointerId !== pid) return;
+      f.ox = bx + (e.clientX - sx); f.oy = by + (e.clientY - sy);
+      place(f);
+    });
+    const end = e=>{
+      if(e.pointerId !== pid) return;
+      pid = null; f.lift = false; f.el.classList.remove('dragging');
+      keepOnScreen(f); place(f);
+      saved[f.i] = { x: f.ox / window.innerWidth, y: f.oy / reasonsSec.offsetHeight };
+      try{ localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); }catch(err){}
+    };
+    f.el.addEventListener('pointerup', end);
+    f.el.addEventListener('pointercancel', end);
+  });
+
+  /* la primera foto arrastrable que aparece se mueve un poco, para que se note que se puede tocar */
+  let nudged = false;
+  const nio = new IntersectionObserver(es=>{
+    es.forEach(e=>{
+      if(nudged || !e.isIntersecting) return;
+      nudged = true; nio.disconnect();
+      const el = e.target;
+      setTimeout(()=>{ el.classList.add('nudge'); setTimeout(()=>el.classList.remove('nudge'), 2400); }, 500);
+    });
+  }, {threshold:.7});
+  floaters.filter(f=>f.front && !saved[f.i]).forEach(f=>nio.observe(f.el));
+
+  /* ---------- galería: automática y deslizable con el dedo ---------- */
+  const gal = document.getElementById('gal');
+  const galTrack = document.getElementById('galTrack');
+  const REAL = GALLERY.length;
+  // tres copias seguidas para poder deslizar sin fin hacia ambos lados
+  [...GALLERY, ...GALLERY, ...GALLERY].forEach(g=>{
+    const d = document.createElement('div'); d.className = 'slide';
+    const fr = document.createElement('div'); fr.className = 'frame';
+    const img = new Image();
+    img.src = g.src; img.alt = ''; img.draggable = false; img.decoding = 'async';
+    img.style.objectPosition = g.pos;
+    fr.appendChild(img); d.appendChild(fr);
+    const cap = document.createElement('span'); cap.className = 'cap'; cap.textContent = g.cap;
+    d.appendChild(cap);
+    galTrack.appendChild(d);
+  });
+  const slides = Array.from(galTrack.children);
+  const EASE = 'transform .7s cubic-bezier(.3,.8,.3,1)';
+  let gi = REAL, curX = 0, galTimer = null, galOn = false, dragging = false;
+
+  function xFor(i){ const s = slides[i]; return gal.clientWidth/2 - (s.offsetLeft + s.offsetWidth/2); }
+  function setX(x, animate){
+    curX = x;
+    galTrack.style.transition = animate ? EASE : 'none';
+    galTrack.style.transform = 'translate3d('+x.toFixed(1)+'px,0,0)';
+  }
+  function setActive(i){ slides.forEach((s,k)=>s.classList.toggle('active', k===i)); }
+  function goTo(i, animate){
+    gi = Math.max(0, Math.min(slides.length-1, i));
+    setActive(gi); setX(xFor(gi), animate !== false);
+  }
+  // si terminó en una copia, salta sin que se note a la misma foto en la copia del medio
+  function recenter(){
+    if(gi >= REAL && gi < 2*REAL) return;
+    const j = REAL + (gi % REAL);
+    const shift = xFor(j) - xFor(gi);
+    galTrack.classList.add('jump');
+    gi = j; setActive(gi); setX(curX + shift, false);
+    void galTrack.offsetWidth;
+    galTrack.classList.remove('jump');
+  }
+  galTrack.addEventListener('transitionend', e=>{
+    if(e.target === galTrack && e.propertyName === 'transform' && !dragging) recenter();
+  });
+  function galLoop(){
+    clearTimeout(galTimer);
+    galTimer = setTimeout(()=>{ if(!dragging) goTo(gi+1); galLoop(); }, 2700); // 0.7s transición + 2s pausa
+  }
+  function visualX(){
+    const m = getComputedStyle(galTrack).transform;
+    const v = m && m.match(/matrix(3d)?\(([^)]+)\)/);
+    if(!v) return curX;
+    const n = v[2].split(',').map(parseFloat);
+    return v[1] ? n[12] : n[4];
+  }
+  function nearest(x){
+    let best = gi, bd = Infinity;
+    for(let k=0;k<slides.length;k++){ const d = Math.abs(xFor(k) - x); if(d < bd){ bd = d; best = k; } }
+    return best;
+  }
+
+  let gp = null, gsx = 0, gst = 0, gbase = 0;
+  gal.addEventListener('pointerdown', e=>{
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    gp = e.pointerId; gsx = e.clientX; gst = performance.now();
+    dragging = true; clearTimeout(galTimer);
+    const x = visualX();          // congela el carrusel donde está, aunque esté en movimiento
+    setX(x, false);
+    gi = nearest(x); recenter(); setActive(gi);
+    gbase = curX;
+    try{ gal.setPointerCapture(gp); }catch(err){}
+  });
+  gal.addEventListener('pointermove', e=>{
+    if(e.pointerId !== gp) return;
+    setX(gbase + (e.clientX - gsx), false);   // la foto sigue al dedo
+  });
+  function release(e, cancelled){
+    if(e.pointerId !== gp) return;
+    gp = null; dragging = false;
+    const dx = cancelled ? 0 : (e.clientX - gsx);
+    const flick = (performance.now() - gst) < 260 && Math.abs(dx) > 24;
+    let target = nearest(curX);
+    if(target === gi && (Math.abs(dx) > gal.clientWidth*0.12 || flick)) target = gi + (dx < 0 ? 1 : -1);
+    goTo(target);
+    galLoop();                    // vuelve a ser automática después de soltar
+  }
+  gal.addEventListener('pointerup', e=>release(e,false));
+  gal.addEventListener('pointercancel', e=>release(e,true));
+
+  new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting && !galOn){ galOn = true; goTo(gi,false); galLoop(); } });
+  },{threshold:.25}).observe(gal);
+
+  /* ---------- carta ---------- */
+  const envCover = document.getElementById('envCover');
+  const letter = document.getElementById('letter');
+  const envelope = document.getElementById('envelope');
+  document.getElementById('openLetter').addEventListener('click', ()=>{
+    envCover.classList.add('out');
+    setTimeout(()=>{
+      envCover.hidden = true; letter.hidden = false;
+      envelope.scrollIntoView({behavior:'smooth', block:'start'});
+      requestAnimationFrame(()=>requestAnimationFrame(()=>letter.classList.add('in')));
+    }, 600);
+  });
+
+  /* ---------- arranque ---------- */
+  function start(){
+    document.getElementById('intro').classList.add('in');
+    measure(); placeAll(); goTo(REAL,false);
+    window.addEventListener('scroll', onScroll, {passive:true});
+    window.addEventListener('resize', ()=>{ measure(); placeAll(); goTo(gi,false); }, {passive:true});
+    window.addEventListener('load', ()=>{ measure(); placeAll(); });
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ measure(); placeAll(); });
+  }
+})();
+</script>
+</body>
+</html>
