@@ -256,7 +256,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <div id="lock">
   <div class="lock-head">
-    <p class="lock-title">Cuatro números. Los cuatro son nuestros.</p>
+    <p class="lock-title">Cuatro números.</p>
     <p class="lock-note">Ingresa el código</p>
     <div class="dots" id="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
   </div>
@@ -290,7 +290,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <div id="scrim"></div>
 <div id="sheet" role="dialog" aria-label="Pistas">
   <div class="grabber"></div>
-  <p class="sheet-title">Una pista por número, en orden. Si te trabas, el símbolo de cada pista también esconde su número: piensa en nuestro viaje soñado.</p>
+  <p class="sheet-title">Una pista por número, en orden.</p>
   <div id="hintList"></div>
   <div class="reveal-wrap"><button id="revealBtn" hidden>Ya, dime el código</button></div>
   <button id="sheetClose">Cerrar</button>
@@ -352,10 +352,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   // Pistas: la primera se ve desde el inicio; las demás aparecen solas a la hora indicada (hora de su celular).
   const DIA_PISTAS = [2026, 9, 21];   // año, mes, día
   const HINTS = [
-    { text: "Todo empezó con un mensaje. ¿Qué día de junio fue?", kanji: "三", hora: null },
-    { text: "El día que por fin nos vimos en persona tiene dos cifras. Esta es la primera.", kanji: "二", hora: 16 },
-    { text: "Y esta es la segunda. Te ayudo: fue la víspera de nuestra cita de Halloween.", kanji: "九", hora: 18 },
-    { text: "¿Cuántos días seguidos salimos después de eso? En Japón este número trae mala suerte. A nosotros nos trajo todo.", kanji: "四", hora: 20 }
+    { text: "Todo empezó con un mensaje. ¿Qué día de junio fue?", hora: null },
+    { text: "El día que por fin nos vimos en persona tiene dos cifras. Esta es la primera.", hora: 16 },
+    { text: "Y esta es la segunda. Te ayudo: fue la víspera de nuestra cita de Halloween.", hora: 18 },
+    { text: "¿Cuántos días seguidos salimos después de eso?", hora: 20 }
   ];
 
   const COLLAGE = [{"src": "fotos/collage-01.jpg", "w": 1000, "h": 667, "front": true, "width": 52, "left": 3, "top": 5.0, "rot": 2}, {"src": "fotos/collage-02.jpg", "w": 1000, "h": 750, "front": false, "width": 42, "left": 50, "top": 9.2, "rot": -3}, {"src": "fotos/galeria-01.jpg", "w": 943, "h": 1200, "front": false, "width": 48, "left": 9, "top": 13.4, "rot": 2.5}, {"src": "fotos/collage-03.jpg", "w": 562, "h": 1000, "front": false, "width": 38, "left": 58, "top": 17.6, "rot": -2}, {"src": "fotos/collage-04.jpg", "w": 750, "h": 1000, "front": true, "width": 56, "left": 7, "top": 21.8, "rot": 3}, {"src": "fotos/collage-05.jpg", "w": 902, "h": 1000, "front": false, "width": 44, "left": 49, "top": 26.0, "rot": -2.5}, {"src": "fotos/galeria-02.jpg", "w": 900, "h": 1200, "front": false, "width": 50, "left": 5, "top": 30.1, "rot": 1.5}, {"src": "fotos/collage-06.jpg", "w": 750, "h": 1000, "front": false, "width": 40, "left": 57, "top": 34.3, "rot": -3.5}, {"src": "fotos/collage-07.jpg", "w": 1000, "h": 750, "front": true, "width": 52, "left": 3, "top": 38.5, "rot": 2}, {"src": "fotos/collage-08.jpg", "w": 1000, "h": 750, "front": false, "width": 42, "left": 52, "top": 42.7, "rot": -1.5}, {"src": "fotos/galeria-03.jpg", "w": 775, "h": 1200, "front": false, "width": 48, "left": 9, "top": 46.9, "rot": 2}, {"src": "fotos/collage-09.jpg", "w": 750, "h": 1000, "front": false, "width": 38, "left": 53, "top": 51.1, "rot": -3}, {"src": "fotos/collage-10.jpg", "w": 750, "h": 1000, "front": true, "width": 56, "left": 7, "top": 55.3, "rot": 2.5}, {"src": "fotos/collage-11.jpg", "w": 562, "h": 1000, "front": false, "width": 44, "left": 51, "top": 59.5, "rot": -2}, {"src": "fotos/galeria-05.jpg", "w": 1200, "h": 966, "front": false, "width": 50, "left": 5, "top": 63.7, "rot": 3}, {"src": "fotos/collage-12.jpg", "w": 1000, "h": 728, "front": false, "width": 40, "left": 52, "top": 67.9, "rot": -2.5}, {"src": "fotos/galeria-04.jpg", "w": 900, "h": 1200, "front": true, "width": 52, "left": 3, "top": 72.0, "rot": 1.5}, {"src": "fotos/collage-14.jpg", "w": 750, "h": 1000, "front": false, "width": 42, "left": 54, "top": 76.2, "rot": -3.5}, {"src": "fotos/collage-13.jpg", "w": 640, "h": 480, "front": true, "width": 48, "left": 9, "top": 80.4, "rot": 2}, {"src": "fotos/galeria-06.jpg", "w": 900, "h": 1200, "front": false, "width": 38, "left": 55, "top": 84.6, "rot": -1.5}, {"src": "fotos/galeria-07.jpg", "w": 1200, "h": 900, "front": false, "width": 56, "left": 7, "top": 88.8, "rot": 2}, {"src": "fotos/galeria-08.jpg", "w": 900, "h": 1200, "front": true, "width": 44, "left": 53, "top": 93.0, "rot": -3}];
